@@ -1,0 +1,62 @@
+version: '3'
+
+services:
+  # Python Service
+  app:
+    container_name: mood-api
+    depends_on:
+      - dbsvc
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: registry.thedeathstarco.com/api:dev
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '5000:5000'
+    environment:
+      BOILERPLATE_ENV: dev
+      POSTGRES_SERVICE: dbsvc
+      POSTGRES_DB: mood
+      POSTGRES_USER: mooduser
+      POSTGRES_PASSWORD: password123
+    env_file:
+      - ./docker/api.env
+    working_dir: /app
+    volumes:
+      - ./:/app
+    networks:
+      - app-network
+
+# Postgres Service
+  dbsvc:
+    container_name: mood-db
+    image: postgres
+    ports:
+      - '5435:5432'
+    restart: always
+    environment:
+      POSTGRES_DB: mood
+      POSTGRES_USER: mooduser
+      POSTGRES_PASSWORD: password123
+      BOILERPLATE_ENV: dev
+    volumes:
+      - ./docker/_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+# DB WEB Admin
+  adminer: 
+    image: adminer
+    restart: always
+    depends_on: 
+      - dbsvc
+    ports:
+      - '8585:8080'
+    networks:
+      - app-network
+
+# Docker Networks
+networks:
+  app-network:
+    driver: bridge

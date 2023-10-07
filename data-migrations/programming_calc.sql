@@ -1,0 +1,1 @@
+CREATE TABLE programming_calc AS SELECT * FROM programming;

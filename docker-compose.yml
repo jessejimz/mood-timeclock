@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  # Python Service
+  app:
+    container_name: mood-api
+    depends_on:
+      - dbsvc
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: registry.thedeathstarco.com/api:dev
+    restart: unless-stopped
+    tty: true
+    ports:
+      - '5000:5000'
+    environment:
+      BOILERPLATE_ENV: dev
+      POSTGRES_SERVICE: dbsvc
+      POSTGRES_DB: mood
+      POSTGRES_USER: mooduser
+      POSTGRES_PASSWORD: password123
+    env_file:
+      - ./docker/api.env
+    working_dir: /app
+    volumes:
+      - ./:/app
+    networks:
+      - app-network
+
+# Postgres Service
+  dbsvc:
+    container_name: mood-db
+    image: mysql
+    # NOTE: use of "mysql_native_password" is not recommended: https://dev.mysql.com/doc/refman/8.0/en/upgrading-from-previous-series.html#upgrade-caching-sha2-password
+    # (this is just an example, not intended to be a production configuration)
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      BOILERPLATE_ENV: dev
+    ports:
+      - '3306:3306'
+    restart: always
+    volumes:
+      - ./docker/_data:/var/lib/postgresql/data
+      - ./data:/data
+    networks:
+      - app-network
+
+# DB WEB Admin
+  adminer: 
+    image: adminer
+    restart: always
+    depends_on: 
+      - dbsvc
+    ports:
+      - '8585:8080'
+    networks:
+      - app-network
+
+# Docker Networks
+networks:
+  app-network:
+    driver: bridge
